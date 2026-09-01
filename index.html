@@ -9,53 +9,66 @@
 <body>
     <div id="app">
         <!-- HOMEPAGE -->
-        <div id="homepage" class="page">
+        <div id="homepage" class="page active">
             <div class="header">
-                <div class="header-content">
-                    <div class="logo">Wikipedia</div>
-                    <div class="search-icon" onclick="openSearch()">🔍</div>
+                <div class="header-left">
+                    <button class="hamburger">☰</button>
+                    <span class="logo">Wikipedia</span>
+                </div>
+                <div class="header-right">
+                    <button class="search-btn" onclick="goToSearch()">🔍</button>
                 </div>
             </div>
+
             <div class="homepage-content">
-                <div class="wiki-logo">
+                <div class="wiki-logo-section">
                     <div class="logo-text">Wikipedia</div>
                     <div class="tagline">The Free Encyclopedia</div>
                 </div>
-                <div class="search-box-home">
-                    <input type="text" id="homeSearchInput" placeholder="Search Wikipedia" class="search-input-home">
-                    <button onclick="searchFromHome()" class="search-button-home">Search</button>
+
+                <div class="search-box-container">
+                    <input type="text" id="homeSearch" placeholder="Search Wikipedia" class="search-input">
+                    <button onclick="searchFromHome()" class="search-button">Search</button>
                 </div>
-                <div class="popular-articles">
-                    <h3>Featured Articles</h3>
-                    <div class="featured-list" id="featuredList"></div>
+
+                <div class="featured-section">
+                    <h3>Featured Today</h3>
+                    <div id="featuredList" class="featured-articles"></div>
                 </div>
             </div>
         </div>
 
         <!-- SEARCH PAGE -->
-        <div id="searchpage" class="page hidden">
+        <div id="searchpage" class="page">
             <div class="header">
-                <div class="header-content">
-                    <div class="back-button" onclick="goBack()">← Back</div>
-                    <div class="search-icon">🔍</div>
+                <div class="header-left">
+                    <button class="back-btn" onclick="goBack()">← Back</button>
+                </div>
+                <div class="header-right">
+                    <span class="search-icon">🔍</span>
                 </div>
             </div>
+
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search Wikipedia..." class="search-input" autofocus>
+                <input type="text" id="searchInput" placeholder="Search Wikipedia..." class="search-box" autofocus>
             </div>
+
             <div class="search-results" id="searchResults"></div>
         </div>
 
         <!-- ARTICLE PAGE -->
-        <div id="articlepage" class="page hidden">
+        <div id="articlepage" class="page">
             <div class="header">
-                <div class="header-content">
-                    <div class="back-button" onclick="goBack()">← Back</div>
-                    <div class="search-icon" onclick="openSearch()">🔍</div>
+                <div class="header-left">
+                    <button class="back-btn" onclick="goBack()">← Back</button>
+                </div>
+                <div class="header-right">
+                    <button class="search-btn" onclick="goToSearch()">🔍</button>
                 </div>
             </div>
+
             <div class="article-container">
-                <div id="articleContent"></div>
+                <div id="articleContent" class="article-content"></div>
             </div>
         </div>
     </div>
