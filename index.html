@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikipedia</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- HOMEPAGE -->
+        <div id="homepage" class="page">
+            <div class="header">
+                <div class="header-content">
+                    <div class="logo">Wikipedia</div>
+                    <div class="search-icon" onclick="openSearch()">🔍</div>
+                </div>
+            </div>
+            <div class="homepage-content">
+                <div class="wiki-logo">
+                    <div class="logo-text">Wikipedia</div>
+                    <div class="tagline">The Free Encyclopedia</div>
+                </div>
+                <div class="search-box-home">
+                    <input type="text" id="homeSearchInput" placeholder="Search Wikipedia" class="search-input-home">
+                    <button onclick="searchFromHome()" class="search-button-home">Search</button>
+                </div>
+                <div class="popular-articles">
+                    <h3>Featured Articles</h3>
+                    <div class="featured-list" id="featuredList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEARCH PAGE -->
+        <div id="searchpage" class="page hidden">
+            <div class="header">
+                <div class="header-content">
+                    <div class="back-button" onclick="goBack()">← Back</div>
+                    <div class="search-icon">🔍</div>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search Wikipedia..." class="search-input" autofocus>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <!-- ARTICLE PAGE -->
+        <div id="articlepage" class="page hidden">
+            <div class="header">
+                <div class="header-content">
+                    <div class="back-button" onclick="goBack()">← Back</div>
+                    <div class="search-icon" onclick="openSearch()">🔍</div>
+                </div>
+            </div>
+            <div class="article-container">
+                <div id="articleContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
