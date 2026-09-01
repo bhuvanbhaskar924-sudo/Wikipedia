@@ -1,16 +1,24 @@
 // MAGIC SYSTEM VARIABLES
-let performerMode = null;
-let targetRevealWord = null;
-let startingArticle = null;
-let targetLetterIndex = 0;
+let magicMode = null;
 let targetLetters = [];
+let currentLetterIndex = 0;
 let navigationHistory = [];
 let currentArticle = null;
 
+// RELATED WORDS DICTIONARY (for adding extra blue links)
+const relatedWordsDict = {
+    'dog': ['Retrieve', 'Remarkable', 'Respond', 'Recognize', 'Reproduce', 'Reproduce', 'Friendly', 'Training', 'Behavior', 'Species', 'Animal', 'Domestic', 'Canine', 'Loyal', 'Intelligent'],
+    'cat': ['Remarkable', 'Recognize', 'Resilient', 'Creature', 'Instinct', 'Territorial', 'Independent', 'Agile', 'Predator', 'Feline', 'Sensitive', 'Playful'],
+    'india': ['Remarkable', 'Rich', 'Diverse', 'Ancient', 'Civilization', 'Culture', 'Religion', 'Democracy', 'Continent', 'Geography', 'Historical', 'Tradition'],
+    'moon': ['Revolve', 'Reflects', 'Research', 'Gravity', 'Celestial', 'Astronomy', 'Satellite', 'Craters', 'Tides', 'Bright', 'Lunar'],
+    'history': ['Recording', 'Records', 'Research', 'Reveals', 'Remarkable', 'Revolutionary', 'Traditions', 'Heritage', 'Documentation', 'Significant'],
+    'default': ['Related', 'Research', 'Remarkable', 'Recognize', 'Retrieve', 'Remarkable', 'Reflect', 'Recent', 'Relevant', 'Reference']
+};
+
 // PAGE NAVIGATION
 function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-    document.getElementById(pageId).classList.remove('hidden');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
 }
 
 function goBack() {
@@ -18,7 +26,7 @@ function goBack() {
         navigationHistory.pop();
         const prevArticle = navigationHistory[navigationHistory.length - 1];
         if (prevArticle) {
-            displayArticle(prevArticle);
+            displayArticle(prevArticle.title);
         } else {
             showPage('homepage');
             navigationHistory = [];
@@ -29,36 +37,25 @@ function goBack() {
     }
 }
 
-function openSearch() {
+function goToSearch() {
     showPage('searchpage');
-    setTimeout(() => {
-        document.getElementById('searchInput').focus();
-    }, 100);
+    setTimeout(() => document.getElementById('searchInput').focus(), 100);
 }
 
-// MAGIC SYSTEM - PARSE SECRET CODE
+// PARSE SECRET CODE
 function parseSecretCode(code) {
-    // Format: [letter-number][revelation-word],[article-name]
-    // Example: bbhuvan,india
-    
-    if (!code || !code.includes(',')) {
-        return null;
-    }
+    if (!code || !code.includes(',')) return null;
 
     const parts = code.split(',');
     const secretPart = parts[0];
     const articlePart = parts.slice(1).join(',');
 
-    if (secretPart.length < 2) {
-        return null;
-    }
+    if (secretPart.length < 2) return null;
 
     const firstChar = secretPart[0].toLowerCase();
     const letterMap = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 };
 
-    if (!letterMap[firstChar]) {
-        return null;
-    }
+    if (!letterMap[firstChar]) return null;
 
     const number = letterMap[firstChar];
     const revelationWord = secretPart.slice(1).toUpperCase();
@@ -68,13 +65,13 @@ function parseSecretCode(code) {
         revelationWord: revelationWord,
         startingArticle: articlePart.toLowerCase().trim(),
         targetLetters: revelationWord.split(''),
-        letterIndex: -1
+        currentIndex: 0
     };
 }
 
 // SEARCH FROM HOMEPAGE
 function searchFromHome() {
-    const query = document.getElementById('homeSearchInput').value.trim();
+    const query = document.getElementById('homeSearch').value.trim();
     if (query) {
         document.getElementById('searchInput').value = query;
         showPage('searchpage');
@@ -95,35 +92,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // Load featured articles on homepage
     loadFeaturedArticles();
 });
 
-// SEARCH FUNCTION
+// PERFORM SEARCH
 async function performSearch(query) {
     const resultsContainer = document.getElementById('searchResults');
     resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
 
     try {
-        // Check if this is a secret code
+        // Check for secret code
         const secretData = parseSecretCode(query);
         if (secretData) {
-            performerMode = secretData;
-            targetRevealWord = secretData.revelationWord;
-            startingArticle = secretData.startingArticle;
+            magicMode = secretData;
             targetLetters = secretData.targetLetters;
-            targetLetterIndex = 0;
+            currentLetterIndex = 0;
             navigationHistory = [];
-
-            // Load starting article silently
-            await loadArticleByTitle(startingArticle);
+            await loadArticleByTitle(secretData.startingArticle);
             return;
         }
 
-        // Normal Wikipedia search
+        // Real Wikipedia search
         const response = await fetch(
-            `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=10`
+            `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=15`
         );
         const data = await response.json();
 
@@ -150,18 +141,18 @@ async function performSearch(query) {
         }
     } catch (error) {
         console.error('Search error:', error);
-        resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Error fetching results</div>';
+        resultsContainer.innerHTML = '<div class="error">Error searching</div>';
     }
 }
 
-// LOAD ARTICLE BY TITLE
+// LOAD ARTICLE
 async function loadArticleByTitle(title) {
     try {
         showPage('articlepage');
-        document.getElementById('articleContent').innerHTML = '<div class="loading">Loading article...</div>';
+        document.getElementById('articleContent').innerHTML = '<div class="loading">Loading...</div>';
 
         const response = await fetch(
-            `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=extracts|pageimages|pageprops&explaintext=false&format=json&origin=*&piprop=thumbnail&pithumbsize=300`
+            `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=extracts|pageimages&explaintext=false&format=json&origin=*`
         );
         const data = await response.json();
         const pages = data.query.pages;
@@ -169,7 +160,7 @@ async function loadArticleByTitle(title) {
         const page = pages[pageId];
 
         if (page.missing) {
-            document.getElementById('articleContent').innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Article not found</div>';
+            document.getElementById('articleContent').innerHTML = '<div class="error">Article not found</div>';
             return;
         }
 
@@ -179,11 +170,11 @@ async function loadArticleByTitle(title) {
             thumbnail: page.thumbnail ? page.thumbnail.source : null
         };
 
-        navigationHistory.push(page.title);
+        navigationHistory.push(currentArticle);
         displayArticle(page.title);
     } catch (error) {
         console.error('Error loading article:', error);
-        document.getElementById('articleContent').innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Error loading article</div>';
+        document.getElementById('articleContent').innerHTML = '<div class="error">Error loading article</div>';
     }
 }
 
@@ -196,14 +187,13 @@ function displayArticle(articleTitle) {
         return;
     }
 
-    let htmlContent = `<div class="article-title">${currentArticle.title}</div>`;
+    let htmlContent = `<h1 class="article-title">${currentArticle.title}</h1>`;
 
     if (currentArticle.thumbnail) {
         htmlContent += `<img src="${currentArticle.thumbnail}" class="article-image" alt="${currentArticle.title}">`;
     }
 
     if (currentArticle.extract) {
-        // Create smart blue links based on magic system
         let processedHtml = processArticleContent(currentArticle.extract, currentArticle.title);
         htmlContent += processedHtml;
     }
@@ -211,117 +201,94 @@ function displayArticle(articleTitle) {
     contentDiv.innerHTML = htmlContent;
 }
 
-// PROCESS ARTICLE CONTENT - ADD BLUE LINKS WITH MAGIC SYSTEM
-function processArticleContent(html, currentArticle) {
-    let sections = html.split(/<h2>|<h3>/);
-    let output = '';
+// PROCESS ARTICLE WITH MAGIC SYSTEM
+function processArticleContent(html, articleTitle) {
+    // Clean HTML
+    let text = html.replace(/<[^>]*>/g, '');
+    
+    // Get target letter if in magic mode
+    const targetLetter = magicMode && currentLetterIndex < targetLetters.length 
+        ? targetLetters[currentLetterIndex] 
+        : null;
+    
+    const position = magicMode ? magicMode.number : 0;
 
-    for (let section of sections) {
-        // Clean up HTML
-        section = section.replace(/<[^>]*>/g, '');
-        
-        if (!section.trim()) continue;
+    // Get all words from text
+    let words = text.match(/\b\w+\b/g) || [];
+    let uniqueWords = [...new Set(words)];
 
-        // Split into paragraphs
-        let paragraphs = section.split(/\n\n+/).filter(p => p.trim().length > 0);
+    // Find words matching target letter at position
+    let matchingWords = [];
+    if (targetLetter && position > 0) {
+        matchingWords = uniqueWords.filter(word => {
+            const cleanWord = word.replace(/[^a-zA-Z]/g, '');
+            return cleanWord.length > position - 1 && 
+                   cleanWord[position - 1].toUpperCase() === targetLetter;
+        });
+    }
 
-        for (let para of paragraphs) {
-            // Get or generate related articles for blue links
-            let blueLinks = getContextualArticles(currentArticle);
-
-            // If in magic mode, filter links based on target letter
-            if (performerMode && targetLetterIndex < targetLetters.length) {
-                const targetLetter = targetLetters[targetLetterIndex];
-                const targetPosition = performerMode.number - 1; // 0-indexed
-
-                // Filter articles where the target position letter matches
-                blueLinks = blueLinks.filter(article => {
-                    const checkWord = article.replace(/[^a-zA-Z]/g, '');
-                    return checkWord.length > targetPosition && 
-                           checkWord[targetPosition].toUpperCase() === targetLetter;
-                });
-
-                // If no matches, get all related articles (fallback)
-                if (blueLinks.length === 0) {
-                    blueLinks = getContextualArticles(currentArticle).slice(0, 5);
-                }
-            }
-
-            // Convert to clickable links
-            let linkifiedPara = para;
-            let uniqueLinks = [...new Set(blueLinks)];
-
-            for (let link of uniqueLinks.slice(0, 8)) {
-                // Create regex pattern to find word in text
-                const regex = new RegExp(`\\b${link}\\b`, 'gi');
-                linkifiedPara = linkifiedPara.replace(regex, 
-                    `<span class="article-link" onclick="selectBlueLink('${link}', event)">${link}</span>`);
-            }
-
-            if (linkifiedPara.trim()) {
-                output += `<p class="article-text">${linkifiedPara}</p>`;
+    // Add extra related words if needed
+    const relatedWords = relatedWordsDict[articleTitle.toLowerCase()] || relatedWordsDict['default'];
+    if (matchingWords.length < 5) {
+        for (let word of relatedWords) {
+            const cleanWord = word.replace(/[^a-zA-Z]/g, '');
+            if (targetLetter && cleanWord.length > position - 1 && 
+                cleanWord[position - 1].toUpperCase() === targetLetter &&
+                !matchingWords.includes(word)) {
+                matchingWords.push(word);
             }
         }
+    }
+
+    // Create blue links in text
+    let processedText = text;
+    if (matchingWords.length > 0) {
+        matchingWords.forEach(word => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            processedText = processedText.replace(regex, 
+                `<span class="article-link" onclick="selectBlueLink('${word}', event)">${word}</span>`);
+        });
+    }
+
+    // Format paragraphs
+    let paragraphs = processedText.split(/\n\n+/).filter(p => p.trim().length > 10);
+    let output = '';
+    
+    for (let para of paragraphs.slice(0, 10)) {
+        output += `<p class="article-text">${para.trim()}</p>`;
     }
 
     return output || '<p class="article-text">Article content loading...</p>';
 }
 
-// GET CONTEXTUAL ARTICLES FOR BLUE LINKS
-function getContextualArticles(article) {
-    const contextualLinks = {
-        'india': ['Asia', 'Hinduism', 'Bollywood', 'Delhi', 'History', 'Government', 'Culture', 'Cricket', 'Taj Mahal', 'Sanskrit', 'Buddhism', 'Mythology'],
-        'dog': ['Animal', 'Mammal', 'Domestic', 'Breed', 'Pet', 'Canine', 'Species', 'Evolution', 'Biology', 'Behavior', 'Hunting', 'Pack'],
-        'rabbit': ['Animal', 'Mammal', 'Herbivore', 'Burrow', 'Species', 'Ears', 'Hopping', 'Predator', 'Fur', 'Reproduction', 'European', 'Wildlife'],
-        'moon': ['Earth', 'Planet', 'Gravity', 'Orbit', 'Satellite', 'Crater', 'Light', 'Astronomy', 'Space', 'NASA', 'Tide', 'Solar System'],
-        'history': ['Past', 'Culture', 'Civilization', 'Era', 'Ancient', 'Medieval', 'Modern', 'War', 'Revolution', 'Timeline', 'Records', 'Events'],
-        'science': ['Biology', 'Chemistry', 'Physics', 'Research', 'Experiment', 'Nature', 'Technology', 'Discovery', 'Method', 'Theory', 'Knowledge', 'Education'],
-        'magic': ['Illusion', 'Trick', 'Performance', 'Stage', 'Magician', 'History', 'Misdirection', 'Entertainment', 'Card', 'Mystery', 'Secret', 'Art'],
-        'asia': ['Continent', 'Country', 'China', 'Japan', 'India', 'Geography', 'Culture', 'Population', 'History', 'Economy', 'Religion', 'Trade'],
-        'nature': ['Animal', 'Plant', 'Environment', 'Ecosystem', 'Forest', 'Wildlife', 'Biodiversity', 'Conservation', 'Species', 'Habitat', 'Climate', 'Biology'],
-    };
-
-    let articleLower = article.toLowerCase();
-    
-    // Direct contextual link
-    if (contextualLinks[articleLower]) {
-        return contextualLinks[articleLower];
-    }
-
-    // Generic related articles
-    return ['Article', 'History', 'Culture', 'Society', 'Science', 'Nature', 'Technology', 'Information', 'Knowledge', 'Research', 'Study', 'Topic'];
-}
-
-// BLUE LINK SELECTION - MAGIC SYSTEM
+// BLUE LINK SELECTION
 function selectBlueLink(linkTitle, event) {
     event.stopPropagation();
 
-    // Record the selection for magic system
-    if (performerMode && targetLetterIndex < targetLetters.length) {
-        const targetLetter = targetLetters[targetLetterIndex];
-        const targetPosition = performerMode.number - 1;
-        const checkWord = linkTitle.replace(/[^a-zA-Z]/g, '');
+    // Check if correct letter
+    if (magicMode && currentLetterIndex < targetLetters.length) {
+        const targetLetter = targetLetters[currentLetterIndex];
+        const position = magicMode.number;
+        const cleanWord = linkTitle.replace(/[^a-zA-Z]/g, '');
 
-        if (checkWord.length > targetPosition && checkWord[targetPosition].toUpperCase() === targetLetter) {
-            console.log(`✓ Correct: ${linkTitle} → Letter ${checkWord[targetPosition]} (Target: ${targetLetter})`);
-            targetLetterIndex++;
-
-            if (targetLetterIndex === targetLetters.length) {
-                // Revelation complete!
-                console.log(`🎯 REVELATION COMPLETE: ${targetRevealWord}`);
-                performerMode = null; // Stop magic mode
+        if (cleanWord.length > position - 1 && cleanWord[position - 1].toUpperCase() === targetLetter) {
+            currentLetterIndex++;
+            
+            if (currentLetterIndex === targetLetters.length) {
+                console.log(`🎯 REVELATION COMPLETE: ${magicMode.revelationWord}`);
+                magicMode = null;
             }
         }
     }
 
-    // Load the linked article
+    // Load related article
     loadArticleByTitle(linkTitle);
 }
 
-// LOAD FEATURED ARTICLES FOR HOMEPAGE
+// LOAD FEATURED ARTICLES
 async function loadFeaturedArticles() {
     const featuredList = document.getElementById('featuredList');
-    const featured = ['India', 'Moon', 'History', 'Science', 'Magic', 'Dog', 'Asia', 'Nature'];
+    const featured = ['India', 'Moon', 'Science', 'History', 'Dog', 'Technology'];
 
     for (let article of featured.slice(0, 5)) {
         try {
@@ -344,7 +311,7 @@ async function loadFeaturedArticles() {
                 featuredList.appendChild(itemDiv);
             }
         } catch (error) {
-            console.error('Error loading featured:', error);
+            console.error('Featured load error:', error);
         }
     }
 }
